@@ -7,7 +7,7 @@ using System.IO;
 
 namespace IdenticalFileFinder.Models
 {
-    internal class DirectoryModel
+    public class DirectoryModel
     {
         public string AbsolutePath { get; private set; }
         public string Path { get; set; }
@@ -42,6 +42,11 @@ namespace IdenticalFileFinder.Models
         public DirectoryModel(string path)
         {
             InitThisClass(path, null);
+        }
+
+        public DirectoryModel(Uri uri)
+        {
+            InitThisClass(uri.LocalPath, null);
         }
 
         public void Populate()

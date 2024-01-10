@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace IdenticalFileFinder.Models
 {
-    internal class FileModel
+    public class FileModel
     {
         public string Path { get; set; }
         public string AbsolutePath { get; private set; }
