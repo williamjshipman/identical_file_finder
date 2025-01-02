@@ -9,6 +9,9 @@ namespace IdenticalFileFinder.Models
 {
     public class DirectoryModel
     {
+        public delegate void DirectoryProgressDelegate(DirectoryModel directory, string action, string stage);
+        public event DirectoryProgressDelegate? DirectoryProgressEvent;
+
         public string AbsolutePath { get; private set; }
         public string Path { get; set; }
         public List<FileModel> Files { get; set; }
@@ -16,10 +19,11 @@ namespace IdenticalFileFinder.Models
 
         public DirectoryModel? Parent { get; set; }
 
-        private void InitThisClass(string path, DirectoryModel? parent)
+        private void InitThisClass(string path, DirectoryModel? parent, DirectoryProgressDelegate progressDelegate)
         {
             Path = path;
             Parent = parent;
+            DirectoryProgressEvent += progressDelegate;
 
             if (parent != null)
             {
@@ -34,23 +38,24 @@ namespace IdenticalFileFinder.Models
             SubDirectories = new List<DirectoryModel>();
         }
 
-        public DirectoryModel(string path, DirectoryModel parent)
+        public DirectoryModel(string path, DirectoryModel parent, DirectoryProgressDelegate progressDelegate)
         {
-            InitThisClass(path, parent);
+            InitThisClass(path, parent, progressDelegate);
         }
 
-        public DirectoryModel(string path)
+        public DirectoryModel(string path, DirectoryProgressDelegate progressDelegate)
         {
-            InitThisClass(path, null);
+            InitThisClass(path, null, progressDelegate);
         }
 
-        public DirectoryModel(Uri uri)
+        public DirectoryModel(Uri uri, DirectoryProgressDelegate progressDelegate)
         {
-            InitThisClass(uri.LocalPath, null);
+            InitThisClass(uri.LocalPath, null, progressDelegate);
         }
 
         public void Populate()
         {
+            DirectoryProgressEvent?.Invoke(this, "Listing files in", "Populate directory structure");
             string[] files = Directory.GetFiles(AbsolutePath);
             foreach (string file in files)
             {
@@ -60,7 +65,7 @@ namespace IdenticalFileFinder.Models
             string[] directories = Directory.GetDirectories(AbsolutePath);
             foreach (string directory in directories)
             {
-                SubDirectories.Add(new DirectoryModel(directory, this));
+                SubDirectories.Add(new DirectoryModel(directory, this, DirectoryProgressEvent));
             }
         }
 
@@ -86,6 +91,7 @@ namespace IdenticalFileFinder.Models
 
         public void CalculateHashes()
         {
+            DirectoryProgressEvent?.Invoke(this, "Hashing files in", "Calculate file hashes");
             foreach (FileModel file in Files)
             {
                 file.CalculateHash();

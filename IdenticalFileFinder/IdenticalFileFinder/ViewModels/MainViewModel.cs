@@ -6,8 +6,11 @@ using IdenticalFileFinder.Services;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace IdenticalFileFinder.ViewModels;
@@ -17,12 +20,18 @@ public class MainViewModel : ViewModelBase
     #region Fields
 
     private AvaloniaList<string> m_DuplicateFileNames = [];
+    private string m_sProgressText = "Ready";
+
+    private ObservableCollection<TreeViewNode> m_Nodes = [];
+
+    private ObservableCollection<TreeViewNode> m_SelectedNodes = [];
 
     #endregion
 
     #region Properties
 
     public List<DirectoryModel> SourceDirectories { get; set; } = [];
+
     public AvaloniaList<string> SourceDirectoryNames
     {
         get
@@ -36,16 +45,42 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    public AvaloniaList<string> DuplicateFileNames
+    public string ProgressText
     {
         get
         {
-            return m_DuplicateFileNames;
+            return m_sProgressText;
         }
         set
         {
-            m_DuplicateFileNames = value;
-            this.RaisePropertyChanged(nameof(DuplicateFileNames));
+            m_sProgressText = value;
+            this.RaisePropertyChanged(nameof(ProgressText));
+        }
+    }
+
+    private ObservableCollection<TreeViewNode> SelectedNodes
+    {
+        get
+        {
+            return m_SelectedNodes;
+        }
+        set
+        {
+            m_SelectedNodes = value;
+            this.RaisePropertyChanged(nameof(SelectedNodes));
+        }
+    }
+
+    public ObservableCollection<TreeViewNode> Nodes
+    {
+        get
+        {
+            return m_Nodes;
+        }
+        set
+        {
+            m_Nodes = value;
+            this.RaisePropertyChanged(nameof(Nodes));
         }
     }
 
@@ -56,6 +91,15 @@ public class MainViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> HandleFileOpenClickCommand { get; }
     public ReactiveCommand<Unit, Unit> ExitCommand { get; } = ReactiveCommand.Create(() => Environment.Exit(0));
     public ReactiveCommand<Unit, Unit> FileFindDuplicatesCommand { get; }
+
+    #endregion
+
+    #region Delegate Methods
+
+    public void UpdateProgressWithDirectory(DirectoryModel directory, string action, string stage)
+    {
+        ProgressText = stage + ": " + action + ": " + directory.Path;
+    }
 
     #endregion
 
@@ -70,15 +114,16 @@ public class MainViewModel : ViewModelBase
             IStorageFolder? folder = await fileService.OpenFolderAsync();
             if (folder != null)
             {
-                DirectoryModel directory = new(folder.Path);
+                DirectoryModel directory = new(folder.Path, UpdateProgressWithDirectory);
                 await directory.PopulateRecursiveAsync();
                 SourceDirectories.Add(directory);
                 this.RaisePropertyChanged(nameof(SourceDirectoryNames));
+                ProgressText = "Ready";
             }
         }
     }
 
-    private void AddFileToDictionary(Dictionary<string, List<FileModel>> hashToFile, FileModel file)
+    private static void AddFileToDictionary(Dictionary<string, List<FileModel>> hashToFile, FileModel file)
     {
         if (file.Hash == null)
         {
@@ -123,22 +168,34 @@ public class MainViewModel : ViewModelBase
             AddFolderToDictionary(hashToFile, directory);
         }
 
+        ProgressText = "Filtering file hashes to find duplicates...";
+
         // Find duplicates.
         List<List<FileModel>> duplicates = 
             hashToFile.Where((item) => item.Value.Count > 1)
                 .Select((item) => item.Value).ToList();
-        AvaloniaList<string> duplicateFileNames = DuplicateFileNames;
-        duplicateFileNames.Clear();
+
+        // Build tree view.
         foreach (List<FileModel> duplicate in duplicates)
         {
-            string sPrefix = " ↳ ";
-            foreach (FileModel file in duplicate)
+            TreeViewNode node = new(){
+                Name = duplicate[0].Path,
+                Path = duplicate[0].AbsolutePath,
+                File = duplicate[0]
+            };
+            foreach (FileModel file in duplicate.Skip(1))
             {
-                duplicateFileNames.Add(sPrefix + file.AbsolutePath);
-                sPrefix = " " + sPrefix;
+                node.Children.Add(new TreeViewNode()
+                {
+                    Name = file.Path,
+                    Path = file.AbsolutePath,
+                    File = file
+                });
             }
+            Nodes.Add(node);
         }
-        DuplicateFileNames = duplicateFileNames;
+
+        ProgressText = "Ready";
     }
 
     #endregion
