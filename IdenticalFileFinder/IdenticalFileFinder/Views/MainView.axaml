@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:IdenticalFileFinder.ViewModels"
+             xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="IdenticalFileFinder.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -11,39 +12,55 @@
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
     <vm:MainViewModel />
   </Design.DataContext>
-  <DockPanel>
-    <Menu DockPanel.Dock="Top">
-      <MenuItem Header="_File">
-        <MenuItem Header="_Open..." Command="{Binding HandleFileOpenClickCommand}" />
-        <MenuItem Header="_Find Duplicates" Command="{Binding FileFindDuplicatesCommand}"/>
-        <Separator/>
-        <MenuItem Header="_Exit" Command="{Binding ExitCommand}"/>
-      </MenuItem>
-    </Menu>
-    <Grid>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="4*" />
-        <!-- <ColumnDefinition Width="2*" /> -->
-      </Grid.ColumnDefinitions>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="*" />
-        <RowDefinition Height="Auto" />
-      </Grid.RowDefinitions>
+  <dialogHost:DialogHost CloseOnClickAway="True">
+    <dialogHost:DialogHost.DialogContent>
+      <StackPanel Orientation="Vertical">
+        <TextBlock Text="{Binding DialogText}" />
+        <Button Content="OK" Command="{Binding DialogCommand}" />
+        <Button Content="Cancel" Command="{Binding DialogCommand}" />
+      </StackPanel>
+    </dialogHost:DialogHost.DialogContent>
+    <DockPanel>
+      <Menu DockPanel.Dock="Top">
+        <MenuItem Header="_File">
+          <MenuItem Header="_Open..." Command="{Binding HandleFileOpenClickCommand}" />
+          <MenuItem Header="_Find Duplicates" Command="{Binding FileFindDuplicatesCommand}"/>
+          <Separator/>
+          <MenuItem Header="_Exit" Command="{Binding ExitCommand}"/>
+        </MenuItem>
+      </Menu>
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="4*" />
+          <!-- <ColumnDefinition Width="2*" /> -->
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-      <ListBox Grid.Column="0" Grid.Row="0" ItemsSource="{Binding SourceDirectoryNames}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" />
-      <Separator Grid.Column="1" Grid.Row="0" />
-      <!-- <ListBox Grid.Column="2" Grid.Row="0" ItemsSource="{Binding DuplicateFileNames}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" /> -->
-      <TreeView Grid.Column="2" Grid.Row="0" ItemsSource="{Binding Nodes}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" SelectedItems="{Binding SelectedNodes}" SelectionMode="Multiple">
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate ItemsSource="{Binding Children}">
-            <TextBlock Text="{Binding Name}" />
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
-      
-      <Label Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding ProgressText}" />
-    </Grid>
-  </DockPanel>
+        <ListBox Grid.Column="0" Grid.Row="0" ItemsSource="{Binding SourceDirectoryNames}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" />
+        <Separator Grid.Column="1" Grid.Row="0" />
+        <!-- <ListBox Grid.Column="2" Grid.Row="0" ItemsSource="{Binding DuplicateFileNames}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" /> -->
+        <TreeView Grid.Column="2" Grid.Row="0" ItemsSource="{Binding Nodes}" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" SelectedItems="{Binding SelectedNodes}" SelectionMode="Multiple">
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}">
+              <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding Path}">
+                <TextBlock.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="Open" Command="{Binding HandleOpenRightClickCommand}" CommandParameter="{Binding Path}" />
+                    <MenuItem Header="Delete" Command="{Binding HandleDeleteRightClickCommand}" CommandParameter="{Binding Path}" />
+                  </ContextMenu>
+                </TextBlock.ContextMenu>
+              </TextBlock>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+        
+        <Label Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding ProgressText}" />
+      </Grid>
+    </DockPanel>
+  </dialogHost:DialogHost>
 </UserControl>

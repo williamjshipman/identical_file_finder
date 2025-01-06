@@ -92,6 +92,11 @@ public class MainViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> ExitCommand { get; } = ReactiveCommand.Create(() => Environment.Exit(0));
     public ReactiveCommand<Unit, Unit> FileFindDuplicatesCommand { get; }
 
+    public ReactiveCommand<string, Unit> HandleOpenRightClickCommand { get; }
+    public ReactiveCommand<string, Unit> HandleDeleteRightClickCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> DialogCommand { get; }
+
     #endregion
 
     #region Delegate Methods
@@ -198,11 +203,45 @@ public class MainViewModel : ViewModelBase
         ProgressText = "Ready";
     }
 
+    private async Task HandleOpenRightClick(string Path)
+    {
+
+    }
+
+    private async Task HandleDeleteRightClick(string Path)
+    {
+        try
+        {
+
+            System.IO.File.Delete(Path);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            ProgressText = "Error deleting file: Unauthorized access.";
+        }
+        catch (DirectoryNotFoundException)
+        {
+            ProgressText = "Error deleting file: Directory not found.";
+        }
+        catch (Exception e)
+        {
+            ProgressText = "Error deleting file: " + e.Message;
+        }
+    }
+
+    public async Task HandleDialogCommand()
+    {
+
+    }
+
     #endregion
 
     public MainViewModel()
     {
         HandleFileOpenClickCommand = ReactiveCommand.CreateFromTask(HandleFileOpenClick);
         FileFindDuplicatesCommand = ReactiveCommand.CreateFromTask(FileFindDuplicates);
+        HandleOpenRightClickCommand = ReactiveCommand.CreateFromTask<string>(HandleOpenRightClick);
+        HandleDeleteRightClickCommand = ReactiveCommand.CreateFromTask<string>(HandleDeleteRightClick);
+        DialogCommand = ReactiveCommand.CreateFromTask(HandleDialogCommand);
     }
 }
