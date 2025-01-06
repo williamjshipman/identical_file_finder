@@ -20,13 +20,18 @@ namespace IdenticalFileFinder.Models
             Path = path;
             Parent = parent;
 
-            if (parent != null)
+            if (Parent != null)
             {
-                AbsolutePath = System.IO.Path.Combine(parent.AbsolutePath, path);
+                if (Path.StartsWith(Parent.AbsolutePath))
+                {
+                    Path = Path[(Parent.AbsolutePath.Length+1)..];
+                }
+                AbsolutePath = System.IO.Path.Combine(Parent.AbsolutePath, path);
             }
             else
             {
                 AbsolutePath = System.IO.Path.GetFullPath(path);
+                Path = System.IO.Path.GetFileName(path);
             }
         }
 
